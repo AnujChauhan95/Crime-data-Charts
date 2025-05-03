@@ -13,7 +13,7 @@ st.sidebar.header("Filters")
 data_file = "data.csv"
 @st.cache_data
 def load_data():
-    df = pd.read_csv(data_file)
+    df = pd.read_csv(train0)
     return df
 
 df = load_data()
