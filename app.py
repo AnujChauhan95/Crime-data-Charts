@@ -10,7 +10,7 @@ st.set_page_config(page_title="Oorja EDA Dashboard", layout="wide")
 st.sidebar.header("Filters")
 
 # Load your data (replace with your actual file)
-data_file = "train.csv"
+data_file = "train0.csv"
 @st.cache_data
 def load_data():
     df = pd.read_csv(data_file)
