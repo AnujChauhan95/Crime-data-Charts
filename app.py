@@ -1,62 +1,102 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.pyplot as plt
 
-# Set page layout
+# Page configuration
 st.set_page_config(page_title="Oorja EDA Dashboard", layout="wide")
 
-# Load the dataset
+# Load dataset
 @st.cache_data
 def load_data():
-    df = pd.read_csv("train0.csv")  # Replace with your actual CSV exported from the notebook
+    df = pd.read_csv("train0.csv")  # Ensure this file is in the Render project directory
     return df
 
 df = load_data()
 
-# Sidebar filters
-st.sidebar.header("Filters")
-
-# Categorical dropdown filters
-categorical_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
-for col in categorical_cols:
-    options = ["All"] + sorted(df[col].dropna().unique().tolist())
-    choice = st.sidebar.selectbox(f"Select {col}", options, key=col)
-    if choice != "All":
-        df = df[df[col] == choice]
-
 # Title
-st.title("Oorja EDA Dashboard")
+st.title("Oorja Exploratory Data Analysis Dashboard")
 
-# Show filtered data
-st.subheader("Filtered Dataset")
-st.dataframe(df, use_container_width=True)
+# Basic info
+st.subheader("Dataset Overview")
+st.write("Shape of the dataset:", df.shape)
+st.write("First few rows:")
+st.dataframe(df.head(), use_container_width=True)
 
-# Plot categorical distributions
-st.subheader("Count Plots for Categorical Columns")
-for col in categorical_cols:
-    st.markdown(f"**{col}**")
-    fig, ax = plt.subplots()
-    sns.countplot(data=df, x=col, order=df[col].value_counts().index, ax=ax)
-    ax.set_title(f"Count Plot for {col}")
-    plt.xticks(rotation=45)
-    st.pyplot(fig)
+# Column types
+st.subheader("Data Types")
+st.write(df.dtypes)
 
-# Plot numerical distributions
-numeric_cols = df.select_dtypes(include=["int64", "float64"]).columns.tolist()
-if numeric_cols:
-    st.subheader("Distribution of Numeric Columns")
-    for col in numeric_cols:
-        st.markdown(f"**{col}**")
-        fig, ax = plt.subplots()
-        sns.histplot(df[col].dropna(), kde=True, ax=ax)
-        ax.set_title(f"Histogram and KDE for {col}")
-        st.pyplot(fig)
+# Missing values
+st.subheader("Missing Value Summary")
+st.write(df.isnull().sum())
 
-# Optional: Correlation Heatmap
-if len(numeric_cols) >= 2:
-    st.subheader("Correlation Heatmap")
-    fig, ax = plt.subplots(figsize=(10, 6))
-    corr = df[numeric_cols].corr()
-    sns.heatmap(corr, annot=True, fmt='.2f', cmap='coolwarm', ax=ax)
-    st.pyplot(fig)
+# Sidebar filters (for interactivity)
+st.sidebar.header("Filter Options")
+cat_cols = df.select_dtypes(include='object').columns.tolist()
+
+filtered_df = df.copy()
+for col in cat_cols:
+    values = ["All"] + sorted(df[col].dropna().unique().tolist())
+    selection = st.sidebar.selectbox(f"Filter by {col}", values, key=col)
+    if selection != "All":
+        filtered_df = filtered_df[filtered_df[col] == selection]
+
+st.subheader("Filtered Data Preview")
+st.dataframe(filtered_df, use_container_width=True)
+
+# Charts based on notebook
+
+# 1. Value counts: Gender
+st.subheader("Gender Distribution")
+fig1, ax1 = plt.subplots()
+sns.countplot(data=filtered_df, x='Gender', ax=ax1)
+st.pyplot(fig1)
+
+# 2. Value counts: Education_Level
+st.subheader("Education Level Distribution")
+fig2, ax2 = plt.subplots()
+sns.countplot(data=filtered_df, x='Education_Level', ax=ax2)
+plt.xticks(rotation=45)
+st.pyplot(fig2)
+
+# 3. Value counts: Ever_Married
+st.subheader("Marital Status")
+fig3, ax3 = plt.subplots()
+sns.countplot(data=filtered_df, x='Ever_Married', ax=ax3)
+st.pyplot(fig3)
+
+# 4. Value counts: Profession
+st.subheader("Profession Distribution")
+fig4, ax4 = plt.subplots(figsize=(10, 4))
+sns.countplot(data=filtered_df, x='Profession', ax=ax4)
+plt.xticks(rotation=45)
+st.pyplot(fig4)
+
+# 5. Count by Age Groups
+st.subheader("Age Distribution")
+fig5, ax5 = plt.subplots()
+sns.histplot(filtered_df['Age'].dropna(), kde=True, ax=ax5)
+st.pyplot(fig5)
+
+# 6. Spending Score Distribution
+st.subheader("Spending Score Distribution")
+fig6, ax6 = plt.subplots()
+sns.histplot(filtered_df['Spending_Score'].dropna(), kde=True, ax=ax6)
+st.pyplot(fig6)
+
+# 7. Work Experience Distribution
+st.subheader("Work Experience Distribution")
+fig7, ax7 = plt.subplots()
+sns.histplot(filtered_df['Work_Experience'].dropna(), kde=True, ax=ax7)
+st.pyplot(fig7)
+
+# 8. Family Size Distribution
+st.subheader("Family Size Distribution")
+fig8, ax8 = plt.subplots()
+sns.histplot(filtered_df['Family_Size'].dropna(), kde=True, ax=ax8)
+st.pyplot(fig8)
+
+# Footer
+st.markdown("---")
+st.caption("This dashboard replicates all charts and logic from the original Oorja EDA notebook.")
