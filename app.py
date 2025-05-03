@@ -16,10 +16,13 @@ def load_data():
     df['Year'] = df['Date_Occurred'].dt.year
     df['Month'] = df['Date_Occurred'].dt.month
     df['Day'] = df['Date_Occurred'].dt.day
+    df['Hour'] = df['Date_Occurred'].dt.hour
     df = df[df['Victim_Age'] >= 0]
     df = df.drop_duplicates()
     df['Weapon_Description'].fillna("UNKNOWN", inplace=True)
     df['Victim_Sex'].fillna("X", inplace=True)
+    df['Victim_Descent'].fillna("Unknown", inplace=True)
+    df['Status_Description'].fillna("Unknown", inplace=True)
     return df
 
 df = load_data()
@@ -76,5 +79,65 @@ st.subheader("Victim Sex Distribution")
 fig5, ax5 = plt.subplots()
 sns.countplot(data=filtered_df, x='Victim_Sex', ax=ax5)
 st.pyplot(fig5)
+
+# Age Group vs No. of Reportings
+st.subheader("Age Group vs No. of Reportings")
+age_bins = pd.cut(filtered_df['Victim_Age'], bins=[0, 12, 18, 30, 45, 60, 80, 100], labels=["0-12", "13-18", "19-30", "31-45", "46-60", "61-80", "81-100"])
+age_counts = age_bins.value_counts().sort_index()
+fig6, ax6 = plt.subplots()
+sns.barplot(x=age_counts.index, y=age_counts.values, ax=ax6)
+ax6.set_xlabel("Age Group")
+ax6.set_ylabel("Number of Reportings")
+st.pyplot(fig6)
+
+# Victim Descent vs No. of Reportings
+st.subheader("Victim Descent vs No. of Reportings")
+fig7, ax7 = plt.subplots(figsize=(12, 5))
+sns.countplot(data=filtered_df, y='Victim_Descent', order=filtered_df['Victim_Descent'].value_counts().index, ax=ax7)
+st.pyplot(fig7)
+
+# Status Description vs No. of Reportings
+st.subheader("Status Description vs No. of Reportings")
+fig8, ax8 = plt.subplots(figsize=(10, 4))
+sns.countplot(data=filtered_df, x='Status_Description', order=filtered_df['Status_Description'].value_counts().index, ax=ax8)
+ax8.tick_params(axis='x', rotation=45)
+st.pyplot(fig8)
+
+# Crime Category vs Average No. of Reportings
+st.subheader("Crime Category vs Average Monthly Reportings")
+monthly_crime_avg = filtered_df.groupby(['Crime_Category', 'Month_Occurred']).size().reset_index(name='Count')
+monthly_avg = monthly_crime_avg.groupby('Crime_Category')['Count'].mean().sort_values(ascending=False)
+fig9, ax9 = plt.subplots(figsize=(10, 5))
+sns.barplot(x=monthly_avg.index, y=monthly_avg.values, ax=ax9)
+ax9.tick_params(axis='x', rotation=45)
+ax9.set_ylabel("Average Reportings per Month")
+st.pyplot(fig9)
+
+# Time Segments vs No. of Reportings
+st.subheader("Time Segments vs No. of Reportings")
+def get_time_segment(hour):
+    if 0 <= hour < 6:
+        return 'Midnight - 6AM'
+    elif 6 <= hour < 12:
+        return '6AM - 12PM'
+    elif 12 <= hour < 18:
+        return '12PM - 6PM'
+    else:
+        return '6PM - Midnight'
+
+filtered_df['Time_Segment'] = filtered_df['Hour'].apply(get_time_segment)
+fig10, ax10 = plt.subplots()
+sns.countplot(data=filtered_df, x='Time_Segment', order=['Midnight - 6AM', '6AM - 12PM', '12PM - 6PM', '6PM - Midnight'], ax=ax10)
+st.pyplot(fig10)
+
+# Weapon Used vs Average No. of Reportings
+st.subheader("Weapon Used vs Average Monthly Reportings")
+monthly_weapon_avg = filtered_df.groupby(['Weapon_Description', 'Month_Occurred']).size().reset_index(name='Count')
+weapon_avg = monthly_weapon_avg.groupby('Weapon_Description')['Count'].mean().sort_values(ascending=False).head(10)
+fig11, ax11 = plt.subplots(figsize=(10, 5))
+sns.barplot(x=weapon_avg.index, y=weapon_avg.values, ax=ax11)
+ax11.tick_params(axis='x', rotation=45)
+ax11.set_ylabel("Average Monthly Reportings")
+st.pyplot(fig11)
 
 st.success("Dashboard loaded with applied filters.")
