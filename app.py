@@ -9,7 +9,7 @@ st.set_page_config(page_title="Oorja EDA Dashboard", layout="wide")
 # Load the dataset
 @st.cache_data
 def load_data():
-    df = pd.read_csv("data.csv")  # Replace with your actual CSV exported from the notebook
+    df = pd.read_csv("train0.csv")  # Replace with your actual CSV exported from the notebook
     return df
 
 df = load_data()
