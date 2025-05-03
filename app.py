@@ -140,4 +140,6 @@ ax11.tick_params(axis='x', rotation=45)
 ax11.set_ylabel("Average Monthly Reportings")
 st.pyplot(fig11)
 
-st.success("Dashboard loaded with applied filters.")
+# Footer
+st.markdown("---")
+st.markdown("<p style='text-align: center;'>Made by Abhishek's baby</p>", unsafe_allow_html=True)
