@@ -1,75 +1,66 @@
+
 import streamlit as st
 import pandas as pd
+import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-# Set wide page layout
-st.set_page_config(page_title="Oorja EDA Dashboard", layout="wide")
+# Streamlit page config
+st.set_page_config(layout="wide")
+st.title("Oorja Crime Data EDA Dashboard")
 
-# Load dataset
+# Load data
 @st.cache_data
 def load_data():
     df = pd.read_csv("train0.csv")
+    df['Date_Occurred'] = pd.to_datetime(df['Date_Occurred'], format="%m/%d/%Y")
+    df['Date_Reported'] = pd.to_datetime(df['Date_Reported'], format="%m/%d/%Y")
+    df['Day_occ'] = df['Date_Occurred'].dt.day
+    df['Day_rep'] = df['Date_Reported'].dt.day
+    df['Month_occ'] = df['Date_Occurred'].dt.month
+    df['Month_rep'] = df['Date_Reported'].dt.month
+    df['Weapon_Description'].fillna("UNKNOWN WEAPON/OTHER WEAPON", inplace=True)
+    df['Victim_Descent'].fillna(df['Victim_Descent'].mode()[0], inplace=True)
+    df['Victim_Sex'].fillna(df['Victim_Sex'].mode()[0], inplace=True)
+    df = df.drop_duplicates()
+    df = df[df['Victim_Age'] >= 0]
     return df
 
-df = load_data()
-
-st.title("Oorja EDA Dashboard")
-
-# Show shape and preview
-st.subheader("Dataset Overview")
-st.write(f"Shape of the dataset: {df.shape}")
-st.dataframe(df.head(), use_container_width=True)
-
-# Show dtypes and missing values
-st.subheader("Data Types and Missing Values")
-col1, col2 = st.columns(2)
-with col1:
-    st.write("**Column Data Types**")
-    st.write(df.dtypes)
-with col2:
-    st.write("**Missing Values**")
-    st.write(df.isnull().sum())
+data = load_data()
 
 # Sidebar filters
-st.sidebar.header("Filter Options")
-cat_cols = df.select_dtypes(include='object').columns.tolist()
-filtered_df = df.copy()
-for col in cat_cols:
-    values = ["All"] + sorted(df[col].dropna().unique().tolist())
-    selection = st.sidebar.selectbox(f"Filter by {col}", values, key=col)
-    if selection != "All":
-        filtered_df = filtered_df[filtered_df[col] == selection]
+st.sidebar.header("Filters")
+crime_categories = data['Crime_Category'].dropna().unique()
+selected_crime = st.sidebar.multiselect("Select Crime Category", crime_categories, default=crime_categories)
 
-# Visualizations
+filtered_data = data[data['Crime_Category'].isin(selected_crime)]
 
-# Categorical plots
-if cat_cols:
-    st.subheader("Categorical Column Distributions")
-    for col in cat_cols:
-        try:
-            st.markdown(f"**{col}**")
-            fig, ax = plt.subplots()
-            sns.countplot(data=filtered_df, x=col, order=filtered_df[col].value_counts().index, ax=ax)
-            plt.xticks(rotation=45)
-            ax.set_title(f"{col} Count Plot")
-            st.pyplot(fig)
-        except Exception as e:
-            st.warning(f"Could not plot `{col}`: {e}")
+# Visualization 1: Crime Category Count
+st.subheader("Crime Category Distribution")
+crime_counts = filtered_data['Crime_Category'].value_counts()
+fig1, ax1 = plt.subplots(figsize=(20, 6))
+sns.barplot(x=crime_counts.index, y=crime_counts.values, ax=ax1)
+plt.xticks(rotation=45)
+st.pyplot(fig1)
 
-# Numerical plots
-num_cols = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
-if num_cols:
-    st.subheader("Numerical Column Distributions")
-    for col in num_cols:
-        try:
-            st.markdown(f"**{col}**")
-            fig, ax = plt.subplots()
-            sns.histplot(filtered_df[col].dropna(), kde=True, ax=ax)
-            ax.set_title(f"{col} Distribution")
-            st.pyplot(fig)
-        except Exception as e:
-            st.warning(f"Could not plot `{col}`: {e}")
+# Visualization 2: Victim Age Distribution
+st.subheader("Victim Age Distribution")
+fig2, ax2 = plt.subplots()
+sns.histplot(filtered_data['Victim_Age'], bins=30, kde=True, ax=ax2)
+st.pyplot(fig2)
 
-st.markdown("---")
-st.caption("All visualizations dynamically generated from train0.csv")
+# Visualization 3: Crime by Month Occurred
+st.subheader("Crime Count by Month Occurred")
+monthly_crime = filtered_data['Month_occ'].value_counts().sort_index()
+fig3, ax3 = plt.subplots()
+sns.lineplot(x=monthly_crime.index, y=monthly_crime.values, ax=ax3, marker="o")
+ax3.set_xlabel("Month")
+ax3.set_ylabel("Crime Count")
+st.pyplot(fig3)
+
+# Visualization 4: Weapon Description
+st.subheader("Weapon Usage Distribution")
+weapon_counts = filtered_data['Weapon_Description'].value_counts().head(10)
+fig4, ax4 = plt.subplots()
+sns.barplot(x=weapon_counts.values, y=weapon_counts.index, ax=ax4)
+st.pyplot(fig4)
