@@ -13,8 +13,8 @@ st.title("Oorja Crime Data EDA Dashboard")
 @st.cache_data
 def load_data():
     df = pd.read_csv("train0.csv")
-    df['Date_Occurred'] = pd.to_datetime(df['Date_Occurred'], format="%m/%d/%Y")
-    df['Date_Reported'] = pd.to_datetime(df['Date_Reported'], format="%m/%d/%Y")
+    df['Date_Occurred'] = pd.to_datetime(df['Date_Occurred'], errors='coerce', infer_datetime_format=True)
+    df['Date_Reported'] = pd.to_datetime(df['Date_Reported'], errors='coerce', infer_datetime_format=True)
     df['Day_occ'] = df['Date_Occurred'].dt.day
     df['Day_rep'] = df['Date_Reported'].dt.day
     df['Month_occ'] = df['Date_Occurred'].dt.month
