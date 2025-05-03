@@ -3,44 +3,56 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Page config
+# Page configuration
 st.set_page_config(page_title="Oorja EDA Dashboard", layout="wide")
 
-# Sidebar filters
-st.sidebar.header("Filters")
-
-# Load your data (replace with your actual file)
-data_file = "train0.csv"
+# Load the dataset
 @st.cache_data
+
 def load_data():
-    df = pd.read_csv(data_file)
+    df = pd.read_csv("train0.csv")  # Replace with your actual CSV file
     return df
 
 df = load_data()
 
-# Example dropdown (adjust based on your dataset)
-category_column = "Category"  # Replace with actual column
-if category_column in df.columns:
-    selected_category = st.sidebar.selectbox("Select Category", df[category_column].dropna().unique())
-    df = df[df[category_column] == selected_category]
+# Sidebar - Filters
+st.sidebar.header("Filters")
 
-# Main layout
+# Dynamically create dropdowns for categorical columns
+categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
+filters = {}
+for col in categorical_cols:
+    options = df[col].dropna().unique().tolist()
+    selected = st.sidebar.selectbox(f"Select {col}", ["All"] + sorted(options), key=col)
+    if selected != "All":
+        df = df[df[col] == selected]
+        filters[col] = selected
+
+# Title
 st.title("Oorja EDA Dashboard")
 
-# Example: Show DataFrame
-st.subheader("Filtered Data Preview")
-st.dataframe(df)
+# Show filtered data
+st.subheader("Filtered Data")
+st.dataframe(df, use_container_width=True)
 
-# Example: Count plot
-plot_column = "SubCategory"  # Replace with actual column
-if plot_column in df.columns:
-    st.subheader(f"Count Plot of {plot_column}")
+# Show count plots for categorical columns
+st.subheader("Categorical Column Count Plots")
+for col in categorical_cols:
     fig, ax = plt.subplots()
-    sns.countplot(data=df, y=plot_column, ax=ax)
+    sns.countplot(data=df, x=col, order=df[col].value_counts().index, ax=ax)
+    ax.set_title(f"Count Plot for {col}")
+    plt.xticks(rotation=45)
     st.pyplot(fig)
 
-# Example: Numeric distribution
-numeric_column = "Value"  # Replace with actual column
+# Show distribution plots for numeric columns
+st.subheader("Numeric Column Distributions")
+numeric_cols = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
+for col in numeric_cols:
+    fig, ax = plt.subplots()
+    sns.histplot(df[col], kde=True, ax=ax)
+    ax.set_title(f"Distribution for {col}")
+    st.pyplot(fig)
+
 if numeric_column in df.columns:
     st.subheader(f"Distribution of {numeric_column}")
     fig, ax = plt.subplots()
