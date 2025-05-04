@@ -4,7 +4,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
-st.title("Oorja Crime Data EDA Dashboard")
+st.title("Crime Data EDA Dashboard")
 
 # Load dataset
 @st.cache_data
@@ -48,10 +48,10 @@ filtered_df = df[
 
 # Crime Category Distribution
 st.subheader("Crime Category Distribution")
-fig1, ax1 = plt.subplots(figsize=(10, 4))
-sns.countplot(data=filtered_df, x='Crime_Category', order=filtered_df['Crime_Category'].value_counts().index, ax=ax1)
-ax1.tick_params(axis='x', rotation=45)
-st.pyplot(fig1)
+fig0, ax0 = plt.subplots(figsize=(10, 4))
+filtered_df['Crime_Category'].value_counts().plot(kind='pie', autopct='%.2f%%')
+ax0.tick_params(axis='x', rotation=45)
+st.pyplot(fig0)
 
 # Victim Age Histogram
 st.subheader("Victim Age Distribution")
@@ -82,7 +82,7 @@ st.pyplot(fig5)
 
 # Age Group vs No. of Reportings
 st.subheader("Age Group vs No. of Reportings")
-age_bins = pd.cut(filtered_df['Victim_Age'], bins=[0, 12, 18, 30, 45, 60, 80, 100], labels=["0-12", "13-18", "19-30", "31-45", "46-60", "61-80", "81-100"])
+age_bins = pd.cut(filtered_df['Victim_Age'], bins=[0, 5, 17, 30, 60, 99], labels=["Infants", "Children", "Young Adults", "Middle Aged", "Elderly"])
 age_counts = age_bins.value_counts().sort_index()
 fig6, ax6 = plt.subplots()
 sns.barplot(x=age_counts.index, y=age_counts.values, ax=ax6)
@@ -104,41 +104,43 @@ ax8.tick_params(axis='x', rotation=45)
 st.pyplot(fig8)
 
 # Crime Category vs Average No. of Reportings
-st.subheader("Crime Category vs Average Monthly Reportings")
-monthly_crime_avg = filtered_df.groupby(['Crime_Category', 'Month_Occurred']).size().reset_index(name='Count')
-monthly_avg = monthly_crime_avg.groupby('Crime_Category')['Count'].mean().sort_values(ascending=False)
-fig9, ax9 = plt.subplots(figsize=(10, 5))
-sns.barplot(x=monthly_avg.index, y=monthly_avg.values, ax=ax9)
+st.subheader("Crime Category vs Average Days in Reporting")
+filtered_df['diff'] = (filtered_df['Date_Reported'] - filtered_df['Date_Occurred']).dt.days
+avg_delay = filtered_df.groupby('Crime_Category')['diff'].mean().sort_values(ascending=False)
+fig9, ax9 = plt.subplots(figsize=(15, 4))
+sns.barplot(x=avg_delay.index, y=avg_delay.values)
+ax9.set_ylabel('Avg days in Reporting')
 ax9.tick_params(axis='x', rotation=45)
-ax9.set_ylabel("Average Reportings per Month")
-st.pyplot(fig9)
 
 # Time Segments vs No. of Reportings
 st.subheader("Time Segments vs No. of Reportings")
 def get_time_segment(hour):
-    if 0 <= hour < 6:
-        return 'Midnight - 6AM'
-    elif 6 <= hour < 12:
-        return '6AM - 12PM'
-    elif 12 <= hour < 18:
-        return '12PM - 6PM'
+    if 400 <= hour <= 759:
+        return 'Early Morning'
+    elif 800 <= hour <= 1159:
+        return 'Morning'
+    elif 1200 <= hour <= 1559:
+        return 'Afternoon'
+    elif 1600 <= hour <= 1959:
+        return 'Evening'
+    elif 1800 <= hour <= 2359:
+        return 'Night'
+    elif 1 <= hour <= 359:
+        return 'Late Night'
     else:
-        return '6PM - Midnight'
+        return 'Unknown'
 
 filtered_df['Time_Segment'] = filtered_df['Hour'].apply(get_time_segment)
-fig10, ax10 = plt.subplots()
-sns.countplot(data=filtered_df, x='Time_Segment', order=['Midnight - 6AM', '6AM - 12PM', '12PM - 6PM', '6PM - Midnight'], ax=ax10)
-st.pyplot(fig10)
+sns.countplot(data=filtered_df, x='Time_Segment', order=['Early Morning', 'Morning', 'Afternoon', 'Evening', 'Night', 'Late Night'])
 
 # Weapon Used vs Average No. of Reportings
 st.subheader("Weapon Used vs Average Monthly Reportings")
 monthly_weapon_avg = filtered_df.groupby(['Weapon_Description', 'Month_Occurred']).size().reset_index(name='Count')
 weapon_avg = monthly_weapon_avg.groupby('Weapon_Description')['Count'].mean().sort_values(ascending=False).head(10)
-fig11, ax11 = plt.subplots(figsize=(10, 5))
-sns.barplot(x=weapon_avg.index, y=weapon_avg.values, ax=ax11)
-ax11.tick_params(axis='x', rotation=45)
-ax11.set_ylabel("Average Monthly Reportings")
-st.pyplot(fig11)
+sns.barplot(x=weapon_avg.index, y=weapon_avg.values)
+fig1, ax1 = plt.subplots(figsize=(15, 4))
+ax1.tick_params(axis='x', rotation=45)
+ax1.set_ylabel("Average Monthly Reportings")
 
 # Footer
 st.markdown("---")
